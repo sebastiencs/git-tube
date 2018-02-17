@@ -42,7 +42,6 @@
   :link '(custom-manual "(git-tube) Top")
   :link '(info-link "(git-tube) Customizing"))
 
-(defvar-local git-tube--ovs nil)
 (defvar-local git-tube--diffs nil)
 
 (defun git-tube--character (lines)
@@ -63,7 +62,7 @@
       (dotimes (_ (max nlines 1))
         (let ((ov (make-overlay (point) (point))))
           (overlay-put ov 'before-string (propertize " " 'display `((margin left-margin) ,char)))
-          (push ov git-tube--ovs))
+          (overlay-put ov 'git-tube t))
         (forward-line 1)))))
 
 (defun git-tube--sort (hunk-a hunk-b)
@@ -73,8 +72,7 @@
 (defun git-tube--update nil
   "."
   (interactive)
-  (seq-do 'delete-overlay git-tube--ovs)
-  (setq git-tube--ovs nil)
+  (git-tube--clean)
   (let* ((inhibit-message t)
          (diffs (sort (git-tube-diff) 'git-tube--sort)))
     (git-tube--set-margin)
@@ -125,6 +123,10 @@
       (diff-mode)
       (goto-char 1))
     buffer))
+
+(defun git-tube--clean nil
+  "."
+  (remove-overlays nil nil 'git-tube t))
 
 (defun git-tube-pop nil
   "."
@@ -184,7 +186,7 @@
     (add-hook 'window-configuration-change-hook 'git-tube--set-margin nil t)
     (git-tube--update))
    (t
-    (seq-do 'delete-overlay git-tube--ovs)
+    (git-tube--clean)
     (remove-hook 'window-configuration-change-hook 'git-tube--set-margin t)
     (remove-hook 'after-save-hook 'git-tube--update t))))
 
